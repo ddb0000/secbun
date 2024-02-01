@@ -1,3 +1,24 @@
+"""
+Asynchronous Port Scanner
+
+Usage:
+    - Basic Scan:
+      python portscanner.py <target_ip> <port_range>
+
+    - JSON Output:
+      python portscanner.py <target_ip> <port_range> --json
+
+    - Specify Scan Rate:
+      python portscanner.py <target_ip> <port_range> --rate <scan_rate>
+
+Options:
+    -h, --help       Show this help message and exit.
+    --json           Output results in JSON format.
+    --rate <rate>    Set scan rate (delay between scans in seconds).
+
+Example:
+    python portscanner.py 192.168.1.100 80-100 --json
+"""
 import asyncio
 import socket
 import sys
@@ -9,6 +30,16 @@ from scapy.all import sr1, IP, TCP
 logging.basicConfig(level=logging.INFO, format='%(message)s')
 
 async def get_banner(ip, port):
+    """
+    Get the banner for a given IP and port.
+
+    Args:
+        ip (str): The target IP address.
+        port (int): The target port number.
+
+    Returns:
+        str: The banner information (empty string if no banner).
+    """
     loop = asyncio.get_event_loop()
     return await loop.run_in_executor(None, _get_banner, ip, port)
 
@@ -24,6 +55,17 @@ def _get_banner(ip, port):
         return ''
 
 async def scan_port(ip, port, scan_results):
+    """
+    Scan specific port on target IP address and update scan results.
+
+    Args:
+        ip (str): Target IP address.
+        port (int): Target port number.
+        scan_results (dict): Dictionary to store scan results.
+
+    Returns:
+        None
+    """
     loop = asyncio.get_event_loop()
     result = {'port': port, 'state': 'CLOSED', 'banner': ''}
     try:
@@ -41,6 +83,16 @@ async def scan_port(ip, port, scan_results):
         scan_results[port] = result
 
 def _create_connection(ip, port):
+    """
+    Async port scan ontarget IP address within specified port range.
+
+    Args:
+        target (str): Target IP address.
+        port_range (str): Port range to scan (e.g., "1-100").
+
+    Returns:
+        dict: Dictionary containing scan results.
+    """
     syn_packet = IP(dst=ip)/TCP(dport=port, flags='S')
     response = sr1(syn_packet, timeout=1, verbose=0)
     if response is not None and response.haslayer(TCP) and response.getlayer(TCP).flags & 0x12:
